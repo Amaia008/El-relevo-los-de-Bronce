@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#8b1e2d">
+<title>El Relevo del Bronce</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:linear-gradient(135deg,#fff8ed,#ead7b7);color:#351b16;min-height:100vh}
+main{max-width:620px;margin:auto;padding:18px}.card{background:#fffdf8;border-radius:24px;padding:24px;box-shadow:0 9px 28px #0002;margin:14px 0}
+h1{color:#8b1e2d;text-align:center;font-size:34px;margin:8px 0 18px}h2{color:#8b1e2d}
+.center{text-align:center}.icon{font-size:48px}.small{color:#745d55;text-align:center}
+.clue{background:#fff1d2;border-left:5px solid #d49a2a;padding:16px;border-radius:12px;font-size:18px;line-height:1.45}
+button{width:100%;padding:15px;margin-top:12px;border:0;border-radius:14px;background:#8b1e2d;color:#fff;font-size:17px;font-weight:700}
+button.gold{background:#d49a2a;color:#351b16}input{width:100%;padding:15px;margin-top:10px;border:2px solid #dcc9ae;border-radius:12px;font-size:18px}
+.hidden{display:none}.msg{text-align:center;font-weight:700;min-height:25px;margin-top:12px}.track{height:8px;background:#eadbc5;border-radius:9px;margin:12px 0}.bar{height:100%;background:#8b1e2d;border-radius:9px;width:0;transition:.3s}
+</style>
+</head>
+<body>
+<main>
+<section class="card" id="welcome">
+<div class="center icon">🔥</div>
+<h1>El Relevo del Bronce</h1>
+<p class="center"><b>Una aventura por Pamplona, San Fermín y una historia familiar.</b></p>
+<p>Irune, alguien muy especial ha preparado para ti cuatro pruebas. Cada una te acercará un poco más al secreto final.</p>
+<p>El recuerdo de tu abuelo, <b>socio número 1</b> y protagonista del <b>chupinazo de 2016</b>, será parte de este relevo.</p>
+<button onclick="start()">COMENZAR</button>
+</section>
+
+<section class="card hidden" id="game">
+<div class="small" id="counter"></div>
+<div class="track"><div class="bar" id="bar"></div></div>
+<h2 id="title"></h2>
+<div class="clue" id="clue"></div>
+<input id="answer" autocomplete="off" placeholder="Escribe tu respuesta">
+<button id="check" onclick="checkAnswer()">COMPROBAR</button>
+<button id="locateBtn" class="gold hidden" onclick="checkLocation()">📍 COMPROBAR UBICACIÓN</button>
+<div class="msg" id="msg"></div>
+</section>
+
+<section class="card hidden" id="final">
+<div class="center icon">🔑</div>
+<h1>¡Lo has conseguido!</h1>
+<p>El relevo del Bronce continúa contigo.</p>
+<div class="clue"><b>Ahora busca el último secreto:</b><br><br>
+Mira en el <b>bolsillo interior del bolso</b>. Allí encontrarás la llave que completa tu aventura.</div>
+<p class="center"><b>¡Aúpa Los de Bronce! ❤️</b></p>
+</section>
+</main>
+
+<script>
+const pruebas=[
+{titulo:"Prueba 1 · El comienzo",pista:"Antes de que empiece la fiesta, toda Pamplona contiene la respiración. Una mecha, un cohete y miles de pañuelos rojos. ¿Cómo se llama ese momento?",respuestas:["chupinazo","el chupinazo"]},
+{titulo:"Prueba 2 · El Bronce",pista:"Tu siguiente pista está ligada a una peña. Su nombre habla de un metal y de una historia que une generaciones. ¿Qué peña buscas?",respuestas:["los de bronce","peña los de bronce","de bronce"]},
+{titulo:"Prueba 3 · La memoria",pista:"Tu abuelo fue el socio número 1 y lanzó el chupinazo de 2016. Hay algo que pasa de una generación a otra. ¿Qué palabra representa lo que hoy recibes de él?",respuestas:["relevo","el relevo"]},
+{titulo:"Prueba 4 · El lugar",pista:"Ha llegado el momento de confirmar que estás en Pamplona. Pulsa el botón de ubicación. Cuando la ciudad te reconozca, podrás descubrir el secreto final.",respuestas:[],ubicacion:true}
+];
+let paso=0;
+const $=id=>document.getElementById(id);
+function start(){ $("welcome").classList.add("hidden"); $("game").classList.remove("hidden"); render(); }
+function render(){
+ const p=pruebas[paso];
+ $("counter").textContent="PRUEBA "+(paso+1)+" DE 4";
+ $("bar").style.width=(paso/4*100)+"%";
+ $("title").textContent=p.titulo;
+ $("clue").textContent=p.pista;
+ $("answer").value=""; $("msg").textContent="";
+ $("answer").classList.toggle("hidden",!!p.ubicacion);
+ $("check").classList.toggle("hidden",!!p.ubicacion);
+ $("locateBtn").classList.toggle("hidden",!p.ubicacion);
+}
+function normal(s){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();}
+function checkAnswer(){
+ const valor=normal($("answer").value);
+ if(pruebas[paso].respuestas.some(r=>normal(r)===valor)) next();
+ else $("msg").textContent="Todavía no… piensa un poco más ❤️";
+}
+function next(){
+ paso++;
+ if(paso>=pruebas.length){$("game").classList.add("hidden");$("final").classList.remove("hidden");}
+ else render();
+}
+function checkLocation(){
+ $("msg").textContent="Comprobando tu ubicación…";
+ if(!navigator.geolocation){$("msg").textContent="Este navegador no permite la ubicación.";return;}
+ navigator.geolocation.getCurrentPosition(
+  pos=>{
+   const distancia=distance(pos.coords.latitude,pos.coords.longitude,42.8125,-1.6458);
+   if(distancia<=5000){$("msg").textContent="📍 ¡Ubicación confirmada!";setTimeout(next,900);}
+   else $("msg").textContent="📍 Todavía estás lejos de Pamplona. Acércate y vuelve a intentarlo.";
+  },
+  ()=>{$("msg").textContent="Permite la ubicación para Chrome y vuelve a pulsar el botón.";},
+  {enableHighAccuracy:true,timeout:10000}
+ );
+}
+function distance(lat1,lon1,lat2,lon2){
+ const R=6371000,rad=Math.PI/180;
+ const a=Math.sin((lat2-lat1)*rad/2)**2+Math.cos(lat1*rad)*Math.cos(lat2*rad)*Math.sin((lon2-lon1)*rad/2)**2;
+ return 2*R*Math.asin(Math.sqrt(a));
+}
+</script>
+</body>
+</html>
