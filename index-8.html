@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#8b1e2d">
+<title>El Relevo del Bronce</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:linear-gradient(160deg,#160f0b,#4b171d 55%,#0e0907);color:#fff;min-height:100vh}
+main{max-width:620px;margin:auto;padding:22px 18px 40px}.card{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:24px;box-shadow:0 15px 45px #0008;backdrop-filter:blur(8px)}
+h1{font-size:34px;margin:5px 0 8px;text-align:center}.sub{text-align:center;color:#f3d7a1;margin-bottom:22px}.crest{font-size:48px;text-align:center}
+button{width:100%;padding:16px;margin-top:12px;border:0;border-radius:14px;background:#d7a33d;color:#1b1008;font-weight:800;font-size:17px}
+button.secondary{background:#fff;color:#541521}button:disabled{opacity:.45}
+.screen{display:none}.screen.active{display:block}.clue{font-size:21px;line-height:1.45;background:#0004;padding:18px;border-radius:16px;margin:18px 0}.small{font-size:14px;color:#ddd}.status{margin-top:15px;padding:12px;border-radius:12px;background:#0004}
+input{width:100%;padding:15px;border-radius:12px;border:1px solid #ffffff44;background:#fff;color:#222;font-size:18px;text-transform:uppercase}
+.ok{color:#9ff0b0}.error{color:#ffb1b1}
+footer{text-align:center;color:#cdbca9;font-size:12px;margin-top:20px}
+</style>
+</head>
+<body>
+<main>
+<section id="home" class="screen active card">
+<div class="crest">🔑🥁</div>
+<h1>El Relevo del Bronce</h1>
+<p class="sub">Una pequeña aventura por Pamplona</p>
+<p>Hoy comienza algo muy especial. Sigue las pistas, demuestra que conoces el espíritu de San Fermín y encuentra el relevo.</p>
+<button onclick="startGame()">COMENZAR</button>
+<button class="secondary" onclick="locate()">📍 ACTIVAR UBICACIÓN</button>
+<div id="location" class="status">La ubicación está pendiente de activar.</div>
+</section>
+
+<section id="game" class="screen card">
+<h1 id="title">Pista 1</h1>
+<div id="clue" class="clue"></div>
+<p class="small">Introduce la respuesta para continuar.</p>
+<input id="answer" autocomplete="off" placeholder="RESPUESTA">
+<button onclick="check()">COMPROBAR</button>
+<div id="msg" class="status"></div>
+<button id="mapbtn" class="secondary" style="display:none" onclick="locate()">📍 COMPROBAR UBICACIÓN</button>
+</section>
+
+<section id="finish" class="screen card">
+<div class="crest">🎉🔑</div>
+<h1>¡RELEVO COMPLETADO!</h1>
+<p class="clue">Has seguido las pistas y llegado hasta el final.</p>
+<p>Ahora busca en el <b>bolsillo interior del bolso</b>. Allí te espera algo que abre una nueva puerta.</p>
+<p class="sub">Que empiece el relevo. ❤️</p>
+</section>
+<footer>El Relevo del Bronce · Pamplona</footer>
+</main>
+
+<script>
+const clues=[
+{q:"Entre blanco y rojo, cada año despierto. No soy una calle ni una plaza: soy el corazón de una fiesta que empieza con un cohete. ¿Qué fiesta es?",a:["sanfermin","san fermin","san fermín"],gps:false},
+{q:"Tengo nombre de metal y de fiesta. En Pamplona, quienes me llevan convierten la amistad en tradición. ¿Qué peña buscas?",a:["los de bronce","de bronce","el relevo del bronce"],gps:false},
+{q:"La siguiente pista no está lejos: necesitas demostrar que estás en Pamplona. Activa tu ubicación y deja que el teléfono compruebe el lugar.",a:[],gps:true},
+{q:"Última pista: el relevo no termina con una respuesta escrita. Cuando completes esta prueba, mira donde se guardan los secretos: el bolsillo interior del bolso.",a:["relevo","bronce"],gps:false}
+];
+let step=0;
+
+function show(id){document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active")}
+function startGame(){step=0;show("game");render()}
+function render(){
+ document.getElementById("title").textContent="Pista "+(step+1)+" de "+clues.length;
+ document.getElementById("clue").textContent=clues[step].q;
+ document.getElementById("answer").value="";
+ document.getElementById("msg").textContent="";
+ document.getElementById("mapbtn").style.display=clues[step].gps?"block":"none";
+}
+function check(){
+ const c=clues[step], v=document.getElementById("answer").value.trim().toLowerCase();
+ if(c.gps){locate();return}
+ if(c.a.some(x=>v===x)){step++;if(step>=clues.length)show("finish");else render()}
+ else {document.getElementById("msg").innerHTML='<span class="error">Esa no es la respuesta. Piensa en la pista y vuelve a intentarlo.</span>'}
+}
+function locate(){
+ const box=document.getElementById("location");
+ if(!navigator.geolocation){box.innerHTML='<span class="error">Este navegador no permite ubicación.</span>';return}
+ box.textContent="Solicitando ubicación…";
+ navigator.geolocation.getCurrentPosition(pos=>{
+   const lat=pos.coords.latitude, lon=pos.coords.longitude;
+   box.innerHTML='<span class="ok">📍 Ubicación activada correctamente.</span><br><span class="small">Coordenadas recibidas. Puedes continuar.</span>';
+   if(document.getElementById("game").classList.contains("active") && clues[step].gps){
+      document.getElementById("msg").innerHTML='<span class="ok">✓ Ubicación comprobada. Pasa a la siguiente pista.</span>';
+      setTimeout(()=>{step++;if(step>=clues.length)show("finish");else render()},700);
+   }
+ },err=>{
+   box.innerHTML='<span class="error">No se ha podido obtener la ubicación. En Chrome pulsa “Permitir” cuando la solicite.</span>';
+ });
+}
+</script>
+</body>
+</html>
